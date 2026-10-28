@@ -1,0 +1,8 @@
+/build/
+/kcore
+/kcore-greedy
+*.exe
+*.obj
+*.o
+*.pdb
+*.ilk

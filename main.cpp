@@ -1,20 +1,13 @@
-#define _USE_MATH_DEFINES
-
-#include <iostream>
-#include <iomanip>
-#include <string>
-
-#include <vector>
-#include <queue>
-#include <deque>
-#include <stack>
-#include <set>
-#include <map>
-#include <unordered_map>
-#include <climits>
 #include <algorithm>
 #include <bitset>
+#include <climits>
+#include <functional>
+#include <iostream>
+#include <queue>
+#include <set>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace std;
 
@@ -23,9 +16,8 @@ const long long max_n = 1000;
 long long n, m, k;
 
 set<long long> g[max_n];
-vector<long long> g2[max_n]; // Unused, but kept for potential future use
+vector<long long> g2[max_n];
 bitset<max_n> g_bit[max_n];
-// bitset<max_n> n2[max_n];  // REMOVED: unused array wasting ~125KB
 
 long long current_subgraph = 0; // Global variable to track current subgraph index
 
@@ -87,7 +79,6 @@ struct BitsetHash
     }
 };
 
-// make this global to save stack memory
 vector<bitset<max_n>> result;
 unordered_set<bitset<max_n>, BitsetHash> visited; // Use unordered_set for faster lookups
 
@@ -96,7 +87,7 @@ priority_queue<pair<long long, long long>, vector<pair<long long, long long>>,
     pq;
 
 /**
- * @brief Find maximal k-core subgraph in G, we proved that there is at most 1 maximal k-core in G
+ * @brief Find the unique maximal k-core by peeling vertices with degree below k.
  *
  * @return set<long long>
  */
@@ -132,11 +123,6 @@ set<long long> find_maximal_kcore()
     }
     return kcore;
 }
-
-// void neighbour_decomposition()
-// {
-//     // REMOVED: This function used n2 array which was unused and wasted memory
-// }
 
 long long calc_diameter(const bitset<max_n> &nodes)
 {
@@ -212,7 +198,6 @@ long long calc_diameter(const bitset<max_n> &nodes)
                 continue; // Already connected
 
             // Check if u and v have a common neighbor using bitwise AND
-            // This replaces the O(n) inner loop with O(1) bitwise operation
             if ((g_bit[u] & g_bit[v] & nodes).none())
             {
                 return 3; // Found a pair with distance > 2
@@ -238,57 +223,8 @@ bool check_kcore(const bitset<max_n> &nodes)
     return true;
 }
 
-bool degeneracy_prune(const bitset<max_n> &nodes, long long k)
-{
-    // If degeneracy < k, no k-core exists
-    vector<int> degree(n + 1, 0);
-    for (int i = 1; i <= n; i++)
-    {
-        if (nodes[i])
-        {
-            degree[i] = (g_bit[i] & nodes).count();
-        }
-    }
-
-    priority_queue<pair<int, int>, vector<pair<int, int>>, greater<>> pq;
-    for (int i = 1; i <= n; i++)
-    {
-        if (nodes[i])
-        {
-            pq.push({degree[i], i});
-        }
-    }
-
-    bitset<max_n> remaining = nodes;
-    while (!pq.empty() && pq.top().first < k)
-    {
-        auto [deg, u] = pq.top();
-        pq.pop();
-
-        if (!remaining[u])
-            continue;
-        remaining[u] = 0;
-
-        // Update neighbors
-        for (int v = 1; v <= n; v++)
-        {
-            if (remaining[v] && g_bit[u][v])
-            {
-                degree[v]--;
-                if (degree[v] < k)
-                {
-                    pq.push({degree[v], v});
-                }
-            }
-        }
-    }
-
-    return remaining.count() >= k;
-}
-
 void find_kcore_from_bitset(bitset<max_n> &nodes)
 {
-
     vector<int> degree(n + 1, 0);
     priority_queue<pair<int, int>, vector<pair<int, int>>, greater<>> pq;
 
@@ -329,6 +265,7 @@ void find_kcore_from_bitset(bitset<max_n> &nodes)
         }
     }
 }
+
 bool is_subgraph_of_result(const bitset<max_n> &nodes)
 {
     for (const auto &res : result)
@@ -364,11 +301,8 @@ void update_visited(const bitset<max_n> &nodes)
     // Remove all marked elements
     for (const auto &v : to_remove)
     {
-
         visited.erase(v);
     }
-
-    // cerr << "Visited nodes updated. Size: " << visited.size() << "\n";
 }
 
 bool is_contained_in_visited(const bitset<max_n> &nodes)
@@ -423,7 +357,6 @@ bool special_check(bitset<max_n> nodes, long long diameter)
             }
         }
         nodes[min_node] = 0; // Peel the node
-        // Check if the remaining nodes still form a k-core
     }
 
     return check_kcore(nodes);
@@ -434,7 +367,7 @@ bool special_check(bitset<max_n> nodes, long long diameter)
  */
 bool solve(bitset<max_n> &nodes, long long diameter, int depth, int branch_index = -1)
 {
-    // assume that nodes is k-core, we need to check if it has diameter 2
+    // The caller supplies a k-core; search for subgraphs with diameter at most two.
 
     if (depth <= 20)
         cerr << "Current subgraph: " << nodes.count() << " " << current_subgraph << " "
@@ -477,21 +410,6 @@ bool solve(bitset<max_n> &nodes, long long diameter, int depth, int branch_index
         }
 
         bool flag = false;
-
-        // Pre-calculate degrees once and reuse
-        // vector<pair<long long, long long>> nodes_degrees;
-        // nodes_degrees.reserve(nodes.count());
-
-        // for (int u = 1; u <= n; ++u)
-        // {
-        //     if (nodes[u])
-        //     {
-        //         long long degree = (g_bit[u] & nodes).count();
-        //         nodes_degrees.push_back({degree, u});
-        //     }
-        // }
-
-        // sort(nodes_degrees.begin(), nodes_degrees.end());
 
         vector<pair<int, int>> two_hop_coverage;
         two_hop_coverage.reserve(nodes.count());
@@ -571,13 +489,6 @@ bool solve(bitset<max_n> &nodes, long long diameter, int depth, int branch_index
 
 vector<bitset<max_n>> find_kcore_with_diameter(set<long long> maximal_kcore, long long diameter = 2)
 {
-    // find all subsets
-    // check if k_core
-    // calculate diameter
-    // if current_diameter < diameter, add more node to see if maximal
-
-    // if there is another "maximal", then skip the current subset, otherwise add the subset to result
-
     result.clear();
     visited.clear(); // Memory fix: clear visited set between different runs
 
