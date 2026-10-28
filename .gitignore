@@ -6,3 +6,5 @@
 *.o
 *.pdb
 *.ilk
+/main
+/out.txt
