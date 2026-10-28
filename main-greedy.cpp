@@ -24,6 +24,36 @@ bitset<max_n> maximal_kcore; // Global variable to store the maximal k-core foun
 vector<pair<long long, long long>> nodes_degrees;
 long long current_subgraph = 0; // Global variable to track current subgraph index
 
+vector<bitset<max_n>> check_result(const vector<bitset<max_n>> &res)
+{
+    vector<bitset<max_n>> result;
+    vector<bitset<max_n>> sorted_res = res;
+    sort(sorted_res.begin(), sorted_res.end(),
+         [](const bitset<max_n> &a, const bitset<max_n> &b)
+         {
+             return a.count() > b.count();
+         });
+
+    for (const bitset<max_n> &R : sorted_res)
+    {
+        bool flag = false;
+        for (bitset<max_n> &x : result)
+        {
+            if ((x | R) == x)
+            {
+                // R is a subset of x, skip it
+                flag = true;
+                break;
+            }
+        }
+        if (!flag)
+        {
+            result.push_back(R);
+        }
+    }
+    return result;
+}
+
 // Custom hash function for bitset - improved version using more bits
 struct BitsetHash
 {
@@ -233,6 +263,7 @@ bool diameter_must_be_more_than_2(const bitset<max_n> &nodes)
 
 bool solve(bitset<max_n> nodes, long long diameter)
 {
+    const long long node_count = nodes.count();
     cerr << "Current subgraph: " << nodes.count() << " " << current_subgraph << "\n";
 
     visited.insert(nodes);
@@ -240,7 +271,7 @@ bool solve(bitset<max_n> nodes, long long diameter)
     current_subgraph++;
     if (k >= n)
         return false;
-    if (nodes.count() <= k)
+    if (node_count <= k)
     {
         bool flag = false;
         for (auto &[degree, u] : nodes_degrees)
@@ -273,7 +304,7 @@ bool solve(bitset<max_n> nodes, long long diameter)
 
         return flag;
     }
-    else if (nodes.count() >= k + 1 && nodes.count() <= 2 * k + 1 && nodes.count() < maximal_kcore.count())
+    else if (node_count >= k + 1 && node_count <= 2 * k + 1 && nodes.count() < maximal_kcore.count())
     {
         bool flag = false;
         for (auto &[degree, u] : nodes_degrees)
@@ -398,7 +429,7 @@ vector<bitset<max_n>> find_kcore_with_diameter(long long diameter = 2)
 
     for (auto &[_, v] : nodes_degrees)
     {
-        if (g[v].size() < k)
+        if (static_cast<long long>(g[v].size()) < k)
             continue;
 
         bitset<max_n> current_set;
@@ -443,7 +474,7 @@ int main()
 
     find_kcore_from_bitset(maximal_kcore);
 
-    vector<bitset<max_n>> res = find_kcore_with_diameter(2);
+    vector<bitset<max_n>> res = check_result(find_kcore_with_diameter(2));
 
     for (bitset<max_n> &x : res)
     {

@@ -100,13 +100,13 @@ set<long long> find_maximal_kcore()
         auto [deg, u] = pq.top();
         pq.pop();
 
-        if (removed[u] || g[u].size() < k)
+        if (removed[u] || static_cast<long long>(g[u].size()) < k)
         {
             removed[u] = true;
             for (auto v : g[u])
             {
                 g[v].erase(u);
-                if (!removed[v] && g[v].size() < k)
+                if (!removed[v] && static_cast<long long>(g[v].size()) < k)
                 {
                     pq.push({g[v].size(), v});
                 }
@@ -118,7 +118,7 @@ set<long long> find_maximal_kcore()
     set<long long> kcore;
     for (long long i = 1; i <= n; ++i)
     {
-        if (!removed[i] && g[i].size() >= k)
+        if (!removed[i] && static_cast<long long>(g[i].size()) >= k)
             kcore.insert(i);
     }
     return kcore;
@@ -367,6 +367,7 @@ bool special_check(bitset<max_n> nodes, long long diameter)
  */
 bool solve(bitset<max_n> &nodes, long long diameter, int depth, int branch_index = -1)
 {
+    const long long node_count = nodes.count();
     // The caller supplies a k-core; search for subgraphs with diameter at most two.
 
     if (depth <= 20)
@@ -374,7 +375,7 @@ bool solve(bitset<max_n> &nodes, long long diameter, int depth, int branch_index
              << visited.size() << " " << depth << " " << branch_index << "\n";
     current_subgraph++;
 
-    if (nodes.count() >= k + 1 && nodes.count() <= 2 * k + 1)
+    if (node_count >= k + 1 && node_count <= 2 * k + 1)
     {
         result.push_back(nodes);
         cerr << "Found: " << nodes.count() << "\n";
@@ -432,7 +433,7 @@ bool solve(bitset<max_n> &nodes, long long diameter, int depth, int branch_index
             new_nodes[u] = 0;
 
             // Early pruning: if removing this node makes graph too small for k-core
-            if (new_nodes.count() <= k || is_subgraph_of_result(new_nodes))
+            if (static_cast<long long>(new_nodes.count()) <= k || is_subgraph_of_result(new_nodes))
                 continue;
 
             if (!check_kcore(new_nodes))
@@ -441,7 +442,7 @@ bool solve(bitset<max_n> &nodes, long long diameter, int depth, int branch_index
             }
 
             // Pruning: check if result is meaningful and not already found
-            if (new_nodes.count() >= k + 1 && !is_subgraph_of_result(new_nodes) && !is_contained_in_visited(new_nodes) && special_check(new_nodes, 2))
+            if (static_cast<long long>(new_nodes.count()) >= k + 1 && !is_subgraph_of_result(new_nodes) && !is_contained_in_visited(new_nodes) && special_check(new_nodes, 2))
             {
                 if (solve(new_nodes, diameter, depth + 1, branch_index))
                 {
@@ -497,6 +498,9 @@ vector<bitset<max_n>> find_kcore_with_diameter(set<long long> maximal_kcore, lon
     {
         kcore_bitset[node] = 1;
     }
+
+    if (kcore_bitset.none())
+        return result;
 
     if (calc_diameter(kcore_bitset) <= 2)
     {
@@ -559,7 +563,7 @@ int main()
 
     for (int i = 1; i <= n; i++)
     {
-        if (g[i].size() < k)
+        if (static_cast<long long>(g[i].size()) < k)
             pq.push({g[i].size(), i});
     }
 

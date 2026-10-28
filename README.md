@@ -7,20 +7,21 @@ Experimental C++ implementations for finding maximal induced subgraphs with mini
 
 ## Build and run
 
-Requires a C++17 compiler. Build each implementation separately:
+Requires GNU Make, `g++` with C++17 support, and a POSIX shell. Tests also need Python 3.
 
 ```sh
-g++ -std=c++17 -O2 main.cpp -o kcore
-g++ -std=c++17 -O2 main-greedy.cpp -o kcore-greedy
-./kcore < graph.txt
-# Or: ./kcore-greedy < graph.txt
+make cpp   # Compile main.cpp, read inp.txt, write out.txt, remove the executable
+make test  # Build both implementations and run regression cases
+make clean # Remove generated executables and output
 ```
+
+Builds use `-Wall -Werror -std=c++17`. Tests compare results against exhaustive enumeration on eight small graphs, covering cliques, a four-cycle, a star, k-core peeling, separate components, and an empty k-core. GitHub Actions runs the same checks on pull requests and pushes to `main`.
 
 ## Input
 
 The first line contains `n m k` (vertices, edges, minimum degree), followed by `m` lines containing an undirected edge `u v`. Use vertex IDs `1` through `n`, with `1 <= n < 1000` and `1 <= k < n`. Inputs must have no self-loops or duplicate edges.
 
-Example `graph.txt`:
+Example `inp.txt` (included):
 
 ```text
 3 3 2
